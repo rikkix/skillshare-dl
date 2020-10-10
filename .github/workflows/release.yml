@@ -1,0 +1,60 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  Build-and-Release:
+    name: build and release
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+
+      - name: set up Go 1.14
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14
+        id: go
+
+      - name: set variables
+        run: |
+          mkdir build
+          echo "::set-env name=VERSION::${GITHUB_REF##*/}"
+        shell: bash
+        env:
+          GITHUB_REF: ${{ github.ref }}
+
+      - name: build
+        run: |
+          LDFLAGS="-s -w -X main.Version=${VERSION}"
+          CMDPATH=./cmd/skillshare-dl/
+          GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_amd64_linux ${CMDPATH}
+          GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_arm64_linux ${CMDPATH}
+          GOOS=linux GOARCH=386 go build -ldflags="${LDFLAGS}" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_386_linux ${CMDPATH}
+          GOOS=linux GOARCH=arm go build -ldflags="${LDFLAGS}" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_arm_linux ${CMDPATH}
+          GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_amd64_windows.exe ${CMDPATH}
+          GOOS=windows GOARCH=386 go build -ldflags="${LDFLAGS}" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_386_windows.exe ${CMDPATH}
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS} -extldflags \"-static\"" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_amd64_linux_static ${CMDPATH}
+      - name: compress
+        uses: actions-github/upx@master
+        with:
+          dir: './build'
+          upx_args: '-9'
+
+      - name: release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ./build/skillshare-dl_amd64_linux
+            ./build/skillshare-dl_arm64_linux
+            ./build/skillshare-dl_386_linux
+            ./build/skillshare-dl_arm_linux
+            ./build/skillshare-dl_amd64_windows.exe
+            ./build/skillshare-dl_386_windows.exe
+            ./build/skillshare-dl_amd64_linux_static
+            ./LICENSE
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
