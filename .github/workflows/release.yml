@@ -21,14 +21,14 @@ jobs:
       - name: set variables
         run: |
           mkdir build
-          echo "::set-env name=VERSION::${GITHUB_REF##*/}"
+          echo "VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
         shell: bash
         env:
           GITHUB_REF: ${{ github.ref }}
 
       - name: build
         run: |
-          LDFLAGS="-s -w -X main.Version=${VERSION}"
+          LDFLAGS="-s -w -X main.Version=${{ env.VERSION }}"
           CMDPATH=./cmd/skillshare-dl/
           GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_amd64_linux ${CMDPATH}
           GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH} -v -o ./build/skillshare-dl_arm64_linux ${CMDPATH}
