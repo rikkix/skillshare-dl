@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kennygrant/sanitize"
 	"github.com/remeh/sizedwaitgroup"
 	"github.com/sirupsen/logrus"
 
@@ -38,7 +39,8 @@ func Download(cookie string, id int) error {
 
 	sessions := classInfo.AllSessions()
 
-	if err := os.MkdirAll(classInfo.Title, os.ModePerm); err != nil {
+	dir := sanitize.BaseName(classInfo.Title)
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -54,8 +56,8 @@ func Download(cookie string, id int) error {
 				return
 			}
 
-			title := strings.ReplaceAll(session.Title, "/", `-`)
-			path := fmt.Sprintf("%s/%d.%s.mp4", classInfo.Title, i, title)
+			title := sanitize.BaseName(strings.ReplaceAll(session.Title, "/", `-`))
+			path := fmt.Sprintf("%s/%d.%s.mp4", dir, i, title)
 			if _, err := os.Stat(path); !os.IsNotExist(err) {
 				fmt.Println("EXISTED:", path)
 				return
