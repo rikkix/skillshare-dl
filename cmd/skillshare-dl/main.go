@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/kennygrant/sanitize"
@@ -17,9 +18,25 @@ import (
 	ssdl "github.com/iochen/skillshare-dl"
 )
 
+type idList []int
+
+func (l *idList) String() string {
+	return "video id list"
+}
+
+func (l *idList) Set(value string) error {
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		return err
+	}
+	*l = append(*l, v)
+	return nil
+}
+
 func main() {
+	var list idList
 	cf := flag.String("cookie", "cookie.txt", "the file stored cookie")
-	id := flag.Int("id", 626081699, "video id")
+	flag.Var(&list, "id", "video id")
 	flag.Parse()
 
 	bytes, err := ioutil.ReadFile(*cf)
@@ -27,7 +44,13 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	logrus.Error(Download(string(bytes), *id))
+	fmt.Println("Video ID List:", list)
+
+	for i := range list {
+		fmt.Printf("=========== Downloading %d ===========\n", i)
+		logrus.Error(Download(string(bytes), list[i]))
+		fmt.Printf("=========== Video %d has been downloaded! ===========\n", i)
+	}
 }
 
 func Download(cookie string, id int) error {

@@ -32,6 +32,8 @@ in **Console**
 3. run(or build it yourself) **skillshare-dl**, with command like below
 ```bash
 $ skillshare-dl -cookie cookie.txt -id 970659408
+# or
+$ skillshare-dl -cookie cookie.txt -id 970659408 -id 652554100 -id ...
 ```
 
 ## Thanks
